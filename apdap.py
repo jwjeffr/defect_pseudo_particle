@@ -26,10 +26,15 @@ class Structures:
     HEX_DIAMOND = 7
     GRAPHENE = 8
 
+
 STRUCTURES = Structures()
 
 
-def add_defect_modifier(frame: int, data: ovito.data.DataCollection, threshold: float) -> None:
+def add_defect_modifier(
+        frame: int,
+        data: ovito.data.DataCollection,
+        threshold: float
+) -> None:
 
     """
     Modifier that adds pseudo-particle at point defect
@@ -43,7 +48,7 @@ def add_defect_modifier(frame: int, data: ovito.data.DataCollection, threshold: 
     :param threshold: standard deviation threshold
     """
 
-    # get positions of largest cluster, assume small clusters have already been deleted
+    # get positions of the largest cluster, assume small clusters have already been deleted
     cluster_positions = data.particles['Position'][...]
 
     # grab box lengths from cell
@@ -102,7 +107,7 @@ def create_defect_pipeline(
     pipeline.modifiers.append(ovito.modifiers.PolyhedralTemplateMatchingModifier(rmsd_cutoff=rmsd_cutoff))
     initial_frame = pipeline.compute(0)
 
-    # create structure dictionary so we can find the most prominent structure
+    # create structure dictionary, so we can find the most prominent structure
     structure_dict = {
         key: val for key, val in initial_frame.attributes.items() if 'PolyhedralTemplateMatching.counts' in key
     }
@@ -144,23 +149,48 @@ def create_defect_pipeline(
     return pipeline
 
 
-def create_combined_pipeline(file_name, rmsd_cutoff=0.12, threshold=5.0):
+def type_mapping_modifier(frame: int, data: ovito.data.DataCollection, first_type: int, second_type: int) -> None:
+
+    """
+    Modifier that maps first type to second type
+    :param frame: frame to modify
+    :param data: data collection to modify
+    :param first_type: first type
+    :param second_type: second type
+    """
+
+    types = data.particles.particle_types[...]
+    data.particles_.particle_types_[types == first_type] = second_type
+
+
+def create_combined_pipeline(
+        file_name: str,
+        rmsd_cutoff: float,
+        threshold: float,
+        defect_type: int = None
+) -> ovito.pipeline.Pipeline:
 
     """
     Function for creating a pipeline with original atoms + defect
     :param file_name: LAMMPS dump file
     :param rmsd_cutoff: rmsd cutoff for Polyhedral Template Matching
     :param threshold: standard deviation threshold for defect modifier
+    :param defect_type: integer label to assign to defect
     :return:
     """
 
     # get the pipeline without the defect
-    unmodified_pipeline = ovito.io.import_file(file_name)
+    pipeline = ovito.io.import_file(file_name)
 
     # create pipeline with defect
-    pipeline = create_defect_pipeline(file_name, rmsd_cutoff, threshold)
+    defect_pipeline = create_defect_pipeline(file_name, rmsd_cutoff, threshold)
 
     # combine the two datasets
-    unmodified_pipeline.modifiers.append(ovito.modifiers.CombineDatasetsModifier(source=pipeline.data_provider))
+    pipeline.modifiers.append(ovito.modifiers.CombineDatasetsModifier(source=defect_pipeline.data_provider))
 
-    return unmodified_pipeline
+    # turn type 0 particle into type type_defect particle if provided
+    if defect_type:
+        modifier = partial(type_mapping_modifier, first_type=0, second_type=defect_type)
+        pipeline.modifiers.append(modifier)
+
+    return pipeline

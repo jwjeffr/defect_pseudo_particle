@@ -11,13 +11,13 @@ from apdap import create_combined_pipeline
 
 def main():
 
-    combined_pipeline = create_combined_pipeline('transV.dump', rmsd_cutoff=0.12, threshold=5.0)
+    combined_pipeline = create_combined_pipeline('transV.dump', rmsd_cutoff=0.12, threshold=5.0, defect_type=4)
     ovito.io.export_file(
         combined_pipeline,
         'transV_mod.dump',
         format='lammps/dump',
         multiple_frames=True,
-        columns=['Particle Identifier', 'Particle Type', 'Position.X', 'Position.Y', 'Position.Z']
+        columns=['Particle Identifier', 'Particle Type', 'Position.X', 'Position.Y', 'Position.Z'],
     )
 
 
