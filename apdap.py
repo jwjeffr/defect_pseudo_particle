@@ -30,11 +30,7 @@ class Structures:
 STRUCTURES = Structures()
 
 
-def add_defect_modifier(
-        frame: int,
-        data: ovito.data.DataCollection,
-        threshold: float
-) -> None:
+def add_defect_modifier(frame: int, data: ovito.data.DataCollection, threshold: float) -> None:
 
     """
     Modifier that adds pseudo-particle at point defect
@@ -88,11 +84,7 @@ def add_defect_modifier(
     data.particles_.add_particle(mean_position)
 
 
-def create_defect_pipeline(
-        file_name: str,
-        rmsd_cutoff: float,
-        threshold: float
-) -> ovito.pipeline.Pipeline:
+def create_defect_pipeline(file_name: str, rmsd_cutoff: float, threshold: float) -> ovito.pipeline.Pipeline:
 
     """
     Function for creating pipeline with only defect
